@@ -1,0 +1,3 @@
+server/pgdata/*
+.DS_STORE
+.htpassword

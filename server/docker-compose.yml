@@ -1,0 +1,47 @@
+# docker-compose.yml
+version: '3'
+services:
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx/:/etc/nginx/
+      - ./.htpasswd:/conf/htpasswd.txt
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - postgrest
+    networks:
+      - postgrest-backend
+  postgrest:
+    image: postgrest/postgrest
+    ports:
+      - "127.0.0.1:3000:3000"
+    links:
+      - db:db
+    environment:
+      PGRST_DB_URI: postgres://postgres:password@db:5432/paudit
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon 
+      PGRST_SERVER_PROXY_URI: "http://127.0.0.1:3000"
+    depends_on:
+      - db
+    networks:
+      - postgrest-backend
+  db:
+    image: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: paudit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+  # Uncomment this if you want to persist the data.
+    volumes:
+     - "./pgdata:/var/lib/postgresql/data"
+     - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+    networks:
+      - postgrest-backend
+networks:
+  postgrest-backend:
+    driver: bridge
